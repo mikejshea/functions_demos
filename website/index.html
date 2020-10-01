@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- <link rel="icon" href="favicon.ico"> -->
+    <title>Elevation Compare</title>
+    <link rel="stylesheet" href=
+          "https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous">
+    <!-- Bootstrap theme -->
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="theme.css" rel="stylesheet">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+
+        google.charts.load('current', {packages: ['corechart', 'line']});
+        var dtTrips;
+
+        async function testFunc() {
+            var myHeaders = new Headers();
+
+            var formdata = new FormData();
+            const fileInput = document.getElementById('gpxFile1');
+            formdata.append("gpxFile", fileInput.files[0]);
+            var requestOptions = {
+                method: 'POST',
+                body: formdata,
+            };
+            showSpinner();
+            // fetch("https://gpxupload-1.azurewebsites.net/api/upload?code=desSXNqJL3onSI6T21Eam4tVctOOBog7tuq1EJaNodAB7wSJCtSexg==", requestOptions)
+            fetch("http://localhost:7071/api/upload", requestOptions)
+                .then(response => response.json())
+                .then(data => drawChart2(fileInput.files[0].name.slice(0, -4), JSON.parse('[' + data.data + ']')))
+                .then(x => hideSpinner())
+        }
+
+        function drawChart() {
+            drawChart2([])
+        }
+
+        function drawChart2(filename, coords) {
+            coords.unshift(['Dist', filename]);
+            var joinedData
+
+            if (!dtTrips) {
+                joinedData = new google.visualization.arrayToDataTable(coords);
+                dtTrips = joinedData;
+            } else {
+                var x = new google.visualization.arrayToDataTable(coords);
+                var cols = []
+                for (i = 1; i < dtTrips.getNumberOfColumns(); i++) {
+                    cols.push(i)
+                }
+                joinedData = google.visualization.data.join(dtTrips, x, 'full', [[0, 0]], cols, [1]);
+                dtTrips = joinedData;
+            }
+
+            var options = {
+                hAxis: {
+                    title: 'Distance'
+                },
+                vAxis: {
+                    title: 'Elevation',
+                },
+                series: {
+                    1: {curveType: 'function'}
+                },
+                chartArea: {
+                    // leave room for y-axis labels
+                    height: '75%',
+                    width: '70%'
+                },
+                width: '100%',
+                height: '50%'
+            };
+
+            var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+            chart.draw(joinedData, options);
+        }
+
+        function hideSpinner() {
+            document.getElementById('spinner')
+                .style.display = 'none';
+            document.getElementById('btnText').textContent = "Graph GPX"
+        }
+
+        function showSpinner() {
+            document.getElementById('spinner')
+                .style.display = 'inline-block';
+            document.getElementById('btnText').textContent = "Graphing..."
+        }
+    </script>
+</head>
+<body style="height: 100%">
+<div class="container-fluid d-flex min-vh-100 flex-column">
+<div class="jumbotron jumbotron-fluid">
+    <div class="container">
+        <h1>GPX Elevation Compare</h1>
+        <p>Use this to compare elevation of two rides from Strava GPX files.</p>
+    </div>
+</div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <h3>Select Strava GPX to Graph:</h3>
+        </div>
+        <div class="col-lg-8">
+            <div class="form-group">
+                <input type="file" class="form-control-file" id="gpxFile1" accept=".gpx">
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div>
+                <button class="btn btn-primary" onclick="testFunc()" id="btnLoad">
+                    <span class="spinner-border spinner-border-sm" id="spinner" style="display: none"></span>
+                    <span id="btnText">Load GPX</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="row bg-light flex-fill fill d-flex justify-content-start" id="chart-area">
+        <div id="chart_div" class="flex-fill fill d-flex justify-content-start"></div>
+    </div>
+</div> <!-- /container -->
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="js/vendor/jquery.min.js"><\/script>')</script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/docs.min.js"></script>
+</body>
+</html>
